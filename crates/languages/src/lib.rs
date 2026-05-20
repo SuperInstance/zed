@@ -62,6 +62,7 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
     let css_lsp_adapter = Arc::new(css::CssLspAdapter::new(node.clone()));
     let eslint_adapter = Arc::new(eslint::EsLintLspAdapter::new(node.clone(), fs.clone()));
     let go_context_provider = Arc::new(go::GoContextProvider);
+    let go_runnable_resolver: Arc<dyn RunnableResolver> = Arc::new(go::GoRunnableResolver);
     let go_lsp_adapter = Arc::new(go::GoLspAdapter);
     let json_context_provider = Arc::new(JsonTaskProvider);
     let json_lsp_adapter = Arc::new(json::JsonLspAdapter::new(languages.clone(), node.clone()));
@@ -117,6 +118,7 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
             name: "go",
             adapters: vec![go_lsp_adapter.clone()],
             context: Some(go_context_provider.clone()),
+            runnable_resolver: Some(go_runnable_resolver.clone()),
             semantic_token_rules: Some(go::semantic_token_rules()),
             ..Default::default()
         },
