@@ -9,15 +9,35 @@ Welcome to Zed, a high-performance, multiplayer code editor from the creators of
 
 ## 🏆 SuperInstance Enhancement: Spectral Analysis
 
-Your codebase is a graph. This shows you its topology.
-Find the modules your code **wants** to be.
+Your codebase has 2,847 files. 312 import from `'utils'`. You know utils is a problem.
 
-The `spectral_analysis` crate (in `crates/spectral_analysis/`) analyzes code dependency graphs using spectral graph theory:
+The `spectral_analysis` crate (in `crates/spectral_analysis/`) tells you exactly how bad it is:
 
-- **Fiedler vector** — find the optimal cut point for splitting a codebase into modules
-- **Cheeger constant** — measure how "connected" your codebase is (tight coupling vs loose)
-- **Community detection** — discover which files/functions form natural clusters (should-be-modules)
-- **Effective resistance** — identify critical bottleneck files (everything depends on them)
+```
+Algebraic connectivity = 0.03
+```
+
+Your codebase is 8 independent modules glued by `utils`.
+
+```
+Spectral bisection found 8 modules.
+Your utils folder spans all 8.
+```
+
+3 files are bridges. Remove them → 8 independent pieces.
+
+```
+Your utils folder isn't a module — it's connective tissue for 8 subsystems. Split it.
+```
+
+### How it works
+
+The crate builds a weighted dependency graph from your file-level imports and module dependencies, then runs spectral graph algorithms:
+
+- **Fiedler value** — second-smallest eigenvalue of the graph Laplacian. ≤ 0.1 means your codebase is barely holding together
+- **Cheeger bounds** — measure the bottleneck ratio. Tight bounds = single points of failure
+- **Community detection** — recursive spectral bisection finds natural module boundaries
+- **Bottleneck analysis** — edge-betweenness + resistance centrality pinpoints what you need to decouple
 
 ### Usage
 
