@@ -7,6 +7,30 @@ Welcome to Zed, a high-performance, multiplayer code editor from the creators of
 
 ---
 
+## 🏆 SuperInstance Enhancement: Spectral Analysis
+
+Your codebase is a graph. This shows you its topology.
+Find the modules your code **wants** to be.
+
+The `spectral_analysis` crate (in `crates/spectral_analysis/`) analyzes code dependency graphs using spectral graph theory:
+
+- **Fiedler vector** — find the optimal cut point for splitting a codebase into modules
+- **Cheeger constant** — measure how "connected" your codebase is (tight coupling vs loose)
+- **Community detection** — discover which files/functions form natural clusters (should-be-modules)
+- **Effective resistance** — identify critical bottleneck files (everything depends on them)
+
+### Usage
+
+```bash
+# Run tests
+cargo test -p spectral_analysis
+
+# Build with extension support
+cargo build -p spectral_analysis
+```
+
+---
+
 ### Installation
 
 On macOS, Linux, and Windows you can [download Zed directly](https://zed.dev/download) or install Zed via your local package manager ([macOS](https://zed.dev/docs/installation#macos)/[Linux](https://zed.dev/docs/linux#installing-via-a-package-manager)/[Windows](https://zed.dev/docs/windows#package-managers)).

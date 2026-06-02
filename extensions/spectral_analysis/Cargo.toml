@@ -1,0 +1,16 @@
+[package]
+name = "zed_spectral_analysis"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+license = "Apache-2.0"
+
+[lints]
+workspace = true
+
+[lib]
+path = "src/spectral_analysis_extension.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.8.0"

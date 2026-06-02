@@ -190,6 +190,7 @@ members = [
     "crates/snippets_ui",
     "crates/sqlez",
     "crates/sqlez_macros",
+    "crates/spectral_analysis",
     "crates/streaming_diff",
     "crates/sum_tree",
     "crates/svg_preview",
@@ -448,6 +449,7 @@ snippet_provider = { path = "crates/snippet_provider" }
 snippets_ui = { path = "crates/snippets_ui" }
 sqlez = { path = "crates/sqlez" }
 sqlez_macros = { path = "crates/sqlez_macros" }
+spectral_analysis = { path = "crates/spectral_analysis" }
 streaming_diff = { path = "crates/streaming_diff" }
 sum_tree = { path = "crates/sum_tree" }
 codestral = { path = "crates/codestral" }
