@@ -277,33 +277,44 @@ impl CodeGraph {
     }
 
     fn nearest_free_near(&mut self, center: LatticePos, search_radius: u32) -> LatticePos {
-        let disk = eisenstein::HexDisk::radius(search_radius);
-        let mut best: Option<LatticePos> = None;
-        let mut best_dist = u32::MAX;
+        // Grow the search radius until we find a free position
+        for r in search_radius..=search_radius + 20 {
+            let disk = eisenstein::HexDisk::radius(r);
+            let mut best: Option<LatticePos> = None;
+            let mut best_dist = u32::MAX;
 
-        for p in disk.iter() {
-            let candidate = center + p;
-            if !self.assigned.contains(&candidate) {
-                let d = candidate.hex_distance();
-                if d < best_dist {
-                    best_dist = d;
-                    best = Some(candidate);
+            for p in disk.iter() {
+                let candidate = center + p;
+                if !self.assigned.contains(&candidate) {
+                    let d = self.assigned.len() as u32; // tie-break by insertion order
+                    if d < best_dist {
+                        best_dist = d;
+                        best = Some(candidate);
+                    }
                 }
+            }
+
+            if let Some(found) = best {
+                return found;
             }
         }
 
-        best.unwrap_or_else(|| {
-            // Fallback: allocate fresh
-            let fresh = self.alloc_next_pos();
-            self.assigned.insert(fresh);
-            fresh
-        })
+        // Absolute fallback: follow the clockwise spiral from center
+        let mut candidate = center;
+        for _ in 0..1000 {
+            if !self.assigned.contains(&candidate) {
+                return candidate;
+            }
+            // Move one step outward in hex spiral
+            let n = self.alloc_counter;
+            self.alloc_counter += 1;
+            candidate = center + index_to_hex_spiral(n);
+        }
+        unreachable!("Exhausted search for free hex position");
     }
 }
 
 /// Convert a flat index to a hex ring-spiral position.
-/// Index 0 → (0,0), indices 1-6 → ring 1, 7-18 → ring 2, etc.
-
 /// Convert a flat index to a hex ring-spiral position.
 /// Index 0 → (0,0), indices 1-6 → ring 1, 7-18 → ring 2, etc.
 fn index_to_hex_spiral(n: u64) -> LatticePos {
@@ -311,65 +322,28 @@ fn index_to_hex_spiral(n: u64) -> LatticePos {
         return E12::new(0, 0);
     }
     
-    // Find ring k from n.
-    // Ring 0: 1 point (indices: just 0)
-    // Ring 1: 6 points (indices 1..=6)
-    // Ring 2: 12 points (indices 7..=18)
-    // Ring k: 6k points, cumulative before ring k = 3k(k-1)
-    //
-    // Solve: 3k(k-1) < n <= 3k(k+1)
-    // k ≈ sqrt(n/3)
-    // Work in f64 to avoid overflow, then clamp
-    
-    let nf = n as f64;
-    let mut k_f64 = (nf / 3.0).sqrt();
-    if k_f64 < 1.0 {
-        k_f64 = 1.0;
-    }
-    
-    // Check nearby integer rings (f64 is precise enough for u64 ranges we use)
-    let mut k: u64 = k_f64.ceil() as u64;
-    
-    // Adjust k if needed (walk up to find the correct ring)
-    // Use saturating math to avoid overflow for giant n
-    for _ in 0..5 {
-        let before = k.saturating_mul(3).saturating_mul(k.saturating_sub(1));
-        let after = k.saturating_mul(3).saturating_mul(k.saturating_add(1));
-        if n > before && n <= after {
-            break;
-        }
-        k += 1;
-    }
-    
-    // Final fallback: just compute using the derived k
-    let before = k.saturating_mul(3).saturating_mul(k.saturating_sub(1));
-    let offset = if n <= before { 0 } else { n - before - 1 };
-    let k_sz = k as i32;
-    
+    // Find ring k: 3k(k-1) < n <= 3k(k+1)
+    // k = ceil( (sqrt(1 + 4n/3) - 1) / 2 )
+    let sqrt_term = (1.0 + (4.0 * n as f64) / 3.0).sqrt();
+    let k = ((sqrt_term - 1.0) / 2.0).ceil() as u64;
+
+    let before = 3 * k * (k - 1);
+    let offset = n - before - 1;
     let side = offset / k;
     let pos_on_side = offset % k;
+    let k_sz = k as i32;
+    let p = pos_on_side as i32;
     
-    // The ring starts at (k, 0) and walks around
-    let start = E12::new(k_sz, 0);
-    
-    // The 6 sides of the ring (axial hex coordinates)
-    let side_dirs = [
-        E12::new(-1, 1),  // side 0: (k,0) → (0,k)
-        E12::new(-1, 0),  // side 1: (0,k) → (-k,k)
-        E12::new(0, -1),  // side 2: (-k,k) → (-k,0)
-        E12::new(1, -1),  // side 3: (-k,0) → (0,-k)
-        E12::new(1, 0),   // side 4: (0,-k) → (k,-k)
-        E12::new(0, 1),   // side 5: (k,-k) → (k,0)
-    ];
-    
-    let mut pos = start;
-    for s in 0..(side.min(5) as usize) {
-        pos = pos + side_dirs[s].scale(k_sz);
+    // Ring starts at (k, 0) and walks 6 sides, each with k points.
+    match side {
+        0 => E12::new(k_sz - p, p),            // side 0: (k,0) -> (0,k)
+        1 => E12::new(-p, k_sz),                // side 1: (0,k) -> (-k,k)
+        2 => E12::new(-k_sz, k_sz - p),        // side 2: (-k,k) -> (-k,0)
+        3 => E12::new(-k_sz + p, -p),           // side 3: (-k,0) -> (0,-k)
+        4 => E12::new(p, -k_sz),                // side 4: (0,-k) -> (k,-k)
+        5 => E12::new(k_sz, -k_sz + p),        // side 5: (k,-k) -> (k,0)
+        _ => unreachable!(),
     }
-    let s = (side % 6) as usize;
-    pos = pos + side_dirs[s].scale(pos_on_side as i32);
-    
-    pos
 }
 
 /// Compute the hex-rounded centroid of a set of lattice positions.
