@@ -3,7 +3,7 @@
 [package]
 name = "hello_web"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 publish = false
 
 [[bin]]

@@ -2828,6 +2828,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
+name = "cathedral-probe"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8448613dd0e2c9136b91f91ad75a08f060f2c8fc69c54cf83da2319e8cfa34a"
+
+[[package]]
 name = "cbc"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -17050,6 +17056,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3e17e880bafaeb362a7b751ec46bdc5b61445a188f80e0606e68167cd540fa3"
 dependencies = [
  "smallvec",
+]
+
+[[package]]
+name = "spectral_analysis"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cathedral-probe",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
